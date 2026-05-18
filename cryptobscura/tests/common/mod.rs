@@ -1,16 +1,8 @@
+//! Code common to the testing system.
+#![allow(dead_code)]
+pub mod frog_ref;
+
 /// Tiny fast PRNG (Lehmer/LCG variant) for generating test data.
-///
-/// # Usage
-/// ```
-/// use common::Lehmer64;
-/// let mut prng = Lehmer64::new(0x123456789ABCDEF);
-/// assert_eq!(0, prng.next_u64());
-/// assert_eq!(0, prng.next_u64());
-///
-/// let mut buffer = [0_u8; 3];
-/// prng.fill_bytes(&mut buffer);
-/// assert_eq!([0, 1, 3], buffer);
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Lehmer64 {
     state: u128,

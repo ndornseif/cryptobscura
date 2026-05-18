@@ -3,6 +3,12 @@
 version = 4
 
 [[package]]
+name = "blobby"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89af0b093cc13baa4e51e64e65ec2422f7e73aea0e612e5ad3872986671622f1"
+
+[[package]]
 name = "block-padding"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -36,6 +42,7 @@ version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e34d8227fe1ba289043aeb13792056ff80fd6de1a9f49137a5f499de8e8c78ea"
 dependencies = [
+ "blobby",
  "crypto-common",
  "inout",
 ]
@@ -53,6 +60,7 @@ dependencies = [
 name = "cryptobscura"
 version = "0.1.0"
 dependencies = [
+ "blobby",
  "cbc",
  "cc",
  "cipher",

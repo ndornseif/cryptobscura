@@ -25,8 +25,8 @@ Schroeppel addressed the issue in a modified version in 1999, the full modified 
 ## Testing
 All ciphers are tested against known ciphertext-plaintext pairs using the blobby format akin to the tests used in the [block-cipher crate](https://github.com/RustCrypto/block-ciphers/tree/master/serpent/tests/data).
 These are generated using the reference C implementations where available.
-The rust implementations are also compared to the reference implementations on large sets of pseudorandom data by linking the C implementation into the rust tests.
 These implementations live in `./references/{CIPHERNAME}`. The test vectors are chosen based on the original NIST specification for the AES competition, found in `./references/nist_kat`.
+The rust implementations are also compared to the reference implementations on large sets of pseudorandom data by linking the C implementation into the rust tests.
 
 ## ⚠️ THE USUAL WARNING
 This project has not been independently audited.

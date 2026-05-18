@@ -22,3 +22,7 @@ cc = "1"
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+blobby = { version = "0.4", features = ["alloc"] }
+cipher = { version = "0.5", features = ["dev"] }

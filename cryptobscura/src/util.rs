@@ -176,7 +176,7 @@ mod tests {
     }
 
     #[test]
-    fn round_trip() {
+    fn hex_round_trip() {
         for &hex in HEX_VECTORS {
             let bin = c_hex_to_bin(hex);
             let mut out_buf = [0u8; HEX_LEN];
