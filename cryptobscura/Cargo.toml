@@ -1,0 +1,24 @@
+[package]
+name = "cryptobscura"
+description = "Pure rust implementations of less common cryptographic primitives."
+license = "LGPL-2.1"
+version = "0.1.0"
+edition = "2024"
+readme = "README.md"
+categories = ["cryptography", "no-std"]
+keywords = ["no-std", "crypto", "block-cipher"]
+repository = "https://github.com/ndornseif/cryptobscura"
+
+[features]
+zeroize = ["dep:zeroize"]
+
+[dependencies]
+cbc = "0.2.0"
+cipher = "0.5"
+zeroize = { version = "1", default-features = false, optional = true }
+
+[build-dependencies]
+cc = "1"
+
+[lints]
+workspace = true
