@@ -89,3 +89,8 @@ fn test_frog_vs_c_non_aes_key_sizes() {
         }
     }
 }
+
+// blobby KATs for AES Key sizes.
+cipher::block_cipher_test!(frog_kat_128, "frog_128", Frog);
+cipher::block_cipher_test!(frog_kat_192, "frog_192", Frog);
+cipher::block_cipher_test!(frog_kat_256, "frog_256", Frog);
