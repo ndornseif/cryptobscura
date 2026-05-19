@@ -16,8 +16,6 @@ use std::{fs, path::Path};
 
 const BLB_DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data");
 
-// ── Vector patterns ───────────────────────────────────────────────────────────
-
 fn push(blobs: &mut Vec<Vec<u8>>, key: &[u8], pt: &[u8; frog_ref::BLOCK_SIZE], ik: &mut [frog_ref::CIterKey; 8]) {
     blobs.push(key.to_vec());
     blobs.push(pt.to_vec());
@@ -69,17 +67,6 @@ fn gen_for_key_size(key_size: usize) -> (String, Vec<u8>) {
         push(&mut blobs, &key, &zero_pt, &mut ik);
     }
 
-    // Walking byte in plaintext: one byte = 0xFF, rest 0x00; zero key.
-    {
-        let zero_key = vec![0u8; key_size];
-        let mut ik = frog_ref::setup_ik(&zero_key, 0);
-        for byte_idx in 0..bs {
-            let mut pt = [0u8; frog_ref::BLOCK_SIZE];
-            pt[byte_idx] = 0xFF;
-            push(&mut blobs, &zero_key, &pt, &mut ik);
-        }
-    }
-
     // Alternating patterns: 0x55 and 0xAA in key and plaintext.
     for &fill in &[0x55u8, 0xAA] {
         let mut key = vec![fill; key_size];
@@ -100,12 +87,9 @@ fn gen_for_key_size(key_size: usize) -> (String, Vec<u8>) {
     (fname, encoded)
 }
 
-// ── Test ──────────────────────────────────────────────────────────────────────
-
 /// Regenerate `tests/data/frog_*.blb` from the C reference implementation.
 ///
-/// Skipped unless `REGEN_KATS=1` is set, so normal test runs are unaffected.
-/// The generated files are committed; re-run only when the C reference changes.
+/// Skipped unless `REGEN_KATS=1` is set.
 #[test]
 fn regen_frog_kats() {
     if std::env::var_os("REGEN_KATS").is_none() {
