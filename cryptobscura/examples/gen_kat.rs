@@ -10,8 +10,8 @@ use std::{
 
 use cipher::{AlgorithmName, Block, BlockCipherEncrypt, BlockSizeUser, KeyInit};
 use cryptobscura::{
-    frog::{AuthorName, Frog},
-    util::binary_to_hex_string,
+    frog::Frog,
+    util::{binary_to_hex_string, AuthorName},
 };
 
 /// Result output directory

@@ -2,6 +2,17 @@
 #![allow(dead_code)]
 pub mod frog_ref;
 
+/// Encode `bytes` as a lowercase hex string.
+pub fn hex(bytes: &[u8]) -> String {
+    bytes
+        .iter()
+        .fold(String::with_capacity(bytes.len() * 2), |mut s, b| {
+            use std::fmt::Write as _;
+            write!(s, "{b:02x}").unwrap();
+            s
+        })
+}
+
 /// Tiny fast PRNG (Lehmer/LCG variant) for generating test data.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Lehmer64 {

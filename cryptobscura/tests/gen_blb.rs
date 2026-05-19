@@ -5,19 +5,24 @@
 //! ```
 //!
 //! The generated `.blb` files are committed to the repository.
-//! They should only be regenerated when the C implementation changes, 
+//! They should only be regenerated when the C implementation changes,
 //! or new test vectors are added.
 #![allow(missing_docs)]
 mod common;
 
-use common::frog_ref;
 use blobby::encode_blobs;
-use std::{fs, path::Path};
+use common::frog_ref;
 use cryptobscura::util::Direction;
+use std::{fs, path::Path};
 
 const BLB_DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data");
 
-fn push(blobs: &mut Vec<Vec<u8>>, key: &[u8], pt: &[u8; frog_ref::BLOCK_SIZE], ik: &mut [frog_ref::CIterKey; 8]) {
+fn push(
+    blobs: &mut Vec<Vec<u8>>,
+    key: &[u8],
+    pt: &[u8; frog_ref::BLOCK_SIZE],
+    ik: &mut [frog_ref::CIterKey; 8],
+) {
     blobs.push(key.to_vec());
     blobs.push(pt.to_vec());
     blobs.push(frog_ref::encrypt(ik, pt).to_vec());

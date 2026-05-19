@@ -2,13 +2,16 @@
 //! and performs the KATs contained in blobby files in `./tests/data`.
 mod common;
 
-use common::{Lehmer64, frog_ref};
+use common::{Lehmer64, frog_ref, hex};
 use cryptobscura::{
     frog::{
         Frog,
-        cipher::{Block, BlockCipherDecrypt, BlockCipherEncrypt, BlockSizeUser, KeyInit, typenum::Unsigned},
+        cipher::{
+            Block, BlockCipherDecrypt, BlockCipherEncrypt, BlockSizeUser, KeyInit,
+            typenum::Unsigned,
+        },
     },
-    util::{hex, Direction},
+    util::Direction,
 };
 
 type Cipher = Frog;
@@ -33,25 +36,51 @@ fn compare_vs_c(rng: &mut Lehmer64, key: &[u8], pt_count: usize) {
         BlockCipherEncrypt::encrypt_block(&rust_cipher, &mut rust_block);
         let rust_ct: [u8; BLOCK_SIZE] = rust_block.into();
 
-        assert_ne!(pt, c_ct,
-            "C encrypt left block unchanged\n  key={} pt={}", hex(key), hex(&pt));
-        assert_ne!(pt, rust_ct,
-            "Rust encrypt left block unchanged\n  key={} pt={}", hex(key), hex(&pt));
-        assert_eq!(c_ct, rust_ct,
+        assert_ne!(
+            pt,
+            c_ct,
+            "C encrypt left block unchanged\n  key={} pt={}",
+            hex(key),
+            hex(&pt)
+        );
+        assert_ne!(
+            pt,
+            rust_ct,
+            "Rust encrypt left block unchanged\n  key={} pt={}",
+            hex(key),
+            hex(&pt)
+        );
+        assert_eq!(
+            c_ct,
+            rust_ct,
             "C/Rust encrypt mismatch\n  key={}\n   pt={}\n  C ct={}\nRust ct={}",
-            hex(key), hex(&pt), hex(&c_ct), hex(&rust_ct));
+            hex(key),
+            hex(&pt),
+            hex(&c_ct),
+            hex(&rust_ct)
+        );
 
         // Decrypt
         let c_pt = frog_ref::decrypt(&mut ik_dec, &c_ct);
         BlockCipherDecrypt::decrypt_block(&rust_cipher, &mut rust_block);
         let rust_pt: [u8; BLOCK_SIZE] = rust_block.into();
 
-        assert_eq!(pt, c_pt,
+        assert_eq!(
+            pt,
+            c_pt,
             "C decrypt failed to recover plaintext\n  key={}\n   ct={}\n  C pt={}",
-            hex(key), hex(&c_ct), hex(&c_pt));
-        assert_eq!(pt, rust_pt,
+            hex(key),
+            hex(&c_ct),
+            hex(&c_pt)
+        );
+        assert_eq!(
+            pt,
+            rust_pt,
             "Rust decrypt failed to recover plaintext\n  key={}\n   ct={}\nRust pt={}",
-            hex(key), hex(&c_ct), hex(&rust_pt));
+            hex(key),
+            hex(&c_ct),
+            hex(&rust_pt)
+        );
     }
 }
 

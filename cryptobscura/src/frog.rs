@@ -5,19 +5,19 @@
 //! While the cipher itself supports other block sizes, this implementation is only tested
 //! for the standard 128 bits.  
 //! It was eliminated after
-//! the first round of evaluation for a series of reasons including a 
+//! the first round of evaluation for a series of reasons including a
 //! 1999 cryptanalysis by Wagner, Ferguson, and Schneier that showcased
 //! large sets of weak keys.
 //! The defining idea in the design of FROG is to make the encryption procedure
-//! itself strongly key dependent. Denying the attacker information about the 
+//! itself strongly key dependent. Denying the attacker information about the
 //! ciphers inner workings without keeping the implementation secret.
 //!
-//! This implementation is based on the designers reference C implementation. 
+//! This implementation is based on the designers reference C implementation.
 //! It can be found under `./references/frog/` or in [^1].
 //!
 //! ## Implementation notes
 //!
-//! - **Side Channel attacks.** The round S-Box lookup is both key-dependent and data-dependent, 
+//! - **Side Channel attacks.** The round S-Box lookup is both key-dependent and data-dependent,
 //!   making this implementation of FROG susceptible to side-channel attacks.
 //! - **Zeroization.** Enable the `zeroize` Cargo feature to clear the 4 608-byte key state
 //!   from memory when the [`Frog`] value is dropped.
@@ -74,6 +74,7 @@
 
 pub use cipher;
 
+use crate::util::{AuthorName, Direction};
 use cipher::typenum::Unsigned as _;
 use cipher::{
     AlgorithmName, Block, BlockCipherDecBackend, BlockCipherDecClosure, BlockCipherDecrypt,
@@ -82,7 +83,6 @@ use cipher::{
     consts::{U1, U16},
 };
 use core::fmt;
-use crate::util::Direction;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
@@ -424,13 +424,6 @@ impl Drop for Frog {
             k.zeroize();
         }
     }
-}
-
-/// Provides the name of the cipher's author or publishing organisation.
-#[allow(clippy::missing_errors_doc)]
-pub trait AuthorName {
-    /// Write author name into `f`.
-    fn write_author_name(f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
 
 impl AuthorName for Frog {

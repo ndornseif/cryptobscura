@@ -1,15 +1,12 @@
-//! General utility functions for working with ciphers.  
+//! General utility functions for working with ciphers.
 //!
 //! # Encoding convention note
 //!
-//! //! `hex` encodes bytes left-to-right as is standard convention.
 //! `binary_to_hex_string` / `hex_string_to_binary` use the reversed byte
 //! order of the NIST AES candidate test vectors: the first hex pair represents
-//! the last byte.  
-//! Unless specifically interacting with aforementioned code use `hex`.
+//! the last byte.
 
-use alloc::string::String;
-use core::fmt::Write as _;
+use core::fmt;
 
 /// Defines cipher working direction.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -19,20 +16,11 @@ pub enum Direction {
     Decrypt,
 }
 
-/// Encode `bytes` as a lowercase hex string.
-///
-/// # Usage
-/// ```
-/// use cryptobscura::util::hex;
-/// let some_bytes = [0xab_u8, 0xcd, 0xef];
-/// assert_eq!("abcdef", hex(&some_bytes));
-/// ```
-pub fn hex(bytes: &[u8]) -> String {
-    let mut s = String::with_capacity(bytes.len() * 2);
-    for &b in bytes {
-        write!(s, "{b:02x}").unwrap();
-    }
-    s
+/// Provides the name of the cipher's author or publishing organisation.
+#[allow(clippy::missing_errors_doc)]
+pub trait AuthorName {
+    /// Write author name into `f`.
+    fn write_author_name(f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
 
 fn binary_to_hex_nibble(n: u8) -> u8 {

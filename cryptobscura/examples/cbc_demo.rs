@@ -5,7 +5,17 @@ use cbc::cipher::{
     BlockModeDecrypt, BlockModeEncrypt, BlockSizeUser, KeyIvInit, KeySizeUser,
     block_padding::Pkcs7, typenum::Unsigned,
 };
-use cryptobscura::{frog::Frog, util::hex};
+use cryptobscura::frog::Frog;
+
+fn hex(bytes: &[u8]) -> String {
+    bytes
+        .iter()
+        .fold(String::with_capacity(bytes.len() * 2), |mut s, b| {
+            use std::fmt::Write as _;
+            write!(s, "{b:02x}").unwrap();
+            s
+        })
+}
 
 const BLOCK_SIZE: usize = <Frog as BlockSizeUser>::BlockSize::USIZE;
 // Frog also supports keys sizes in 5..=125 byte, but defaults to 16.

@@ -1,8 +1,8 @@
 //! Safe wrappers around the FROG C reference implementation.
 #![allow(dead_code)]
 
-use std::ffi::c_int;
 use cryptobscura::util::Direction;
+use std::ffi::c_int;
 
 pub const BLOCK_SIZE: usize = 16;
 
