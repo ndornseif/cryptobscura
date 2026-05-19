@@ -21,6 +21,7 @@ its relatively complicated key schedule and its use of an additional *spice* par
 The cipher comes in five different versions depending on the required block size, this implementation includes only HPC-Medium (65-128 bits) and HPC-Long (129-512 bits).
 In its original iteration the cipher suffered from weak keys (around 2<sup>-8</sup> of the keyspace)[^4] these keys drop the Security level to around 2<sup>90</sup>.
 Schroeppel addressed the issue in a modified version in 1999, the full modified specification can be found in [^5].
+This crate implements the newer strengthened specification, that claims to fix the aforementioned attack.
 -->
 ## Testing
 All ciphers are tested against known ciphertext-plaintext pairs using the blobby format akin to the tests used in the [block-cipher crate](https://github.com/RustCrypto/block-ciphers/tree/master/serpent/tests/data).
@@ -49,6 +50,8 @@ This crate may be licensed under the [GNU Lesser General Public License, version
 [^4]: [C. D’Halluin, G. Bijnens, B. Preneel, V. Rijmen; "Equivalent Keys of HPC"; Advances in Cryptology - ASIACRYPT’99; 1999](https://link.springer.com/chapter/10.1007/978-3-540-48000-6_4)
 
 [^5]: [R. Schroeppel; "Hasty Pudding Cipher Specification"; Revised 1999](https://web.archive.org/web/20110717205702/http://richard.schroeppel.name:8015/hpc/hpc-spec)
+
+[^6]: [Puddingmeister R. Schroeppel; "The Hasty Pudding Cipher: One Year Later; 1999"](https://web.archive.org/web/20021203180746/http://www.cs.arizona.edu/~rcs/hpc/hpc-oneyearlater)
 -->
 <!---
 Left here for future reference

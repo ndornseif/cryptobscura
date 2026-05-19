@@ -82,6 +82,7 @@ use cipher::{
     consts::{U1, U16},
 };
 use core::fmt;
+use crate::util::Direction;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
@@ -91,17 +92,10 @@ const MIN_KEY_SIZE: usize = 5;
 const NUM_ITER: usize = 8;
 const SUBST_PERMU_SIZE: usize = 1 << u8::BITS;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-/// Defines cipher working direction.
-enum Direction {
-    Encrypt,
-    Decrypt,
-}
-
-#[derive(Clone, Copy, Debug)]
 /// Round key used by FROG.
 /// The full algorithm needs one for each round
 /// and direction so 16 in total.
+#[derive(Clone, Copy, Debug)]
 struct IterKey {
     xor_bu: [u8; BLOCK_SIZE],
     subst_permu: [u8; SUBST_PERMU_SIZE],
@@ -131,8 +125,8 @@ impl Zeroize for IterKey {
     }
 }
 
-#[derive(Clone)]
 /// The FROG block cipher as submitted to the AES competition.
+#[derive(Clone)]
 pub struct Frog {
     enc_keys: InternalKey,
     dec_keys: InternalKey,
@@ -432,7 +426,7 @@ impl Drop for Frog {
     }
 }
 
-/// Provides the name of the cipher's author or submitting organisation.
+/// Provides the name of the cipher's author or publishing organisation.
 #[allow(clippy::missing_errors_doc)]
 pub trait AuthorName {
     /// Write author name into `f`.
@@ -451,8 +445,8 @@ mod test {
 
     #[test]
     /// Super basic functionality test.
-    fn round_trip() {
-        let key = [0x01u8; 16];
+    fn cipher_round_trip() {
+        let key = [0x01u8; BLOCK_SIZE];
         let frog = Frog::new_from_slice(&key).unwrap();
 
         let plaintext: [u8; BLOCK_SIZE] = [

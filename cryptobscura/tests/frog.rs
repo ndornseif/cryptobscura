@@ -1,4 +1,5 @@
-//! Tests the FROG Rust implementation against the C reference on pseudorandom data.
+//! Tests the FROG Rust implementation against the C reference on pseudorandom data
+//! and performs the KATs contained in blobby files in `./tests/data`.
 mod common;
 
 use common::{Lehmer64, frog_ref};
@@ -7,7 +8,7 @@ use cryptobscura::{
         Frog,
         cipher::{Block, BlockCipherDecrypt, BlockCipherEncrypt, BlockSizeUser, KeyInit, typenum::Unsigned},
     },
-    util::hex,
+    util::{hex, Direction},
 };
 
 type Cipher = Frog;
@@ -17,8 +18,8 @@ const BLOCK_SIZE: usize = <Cipher as BlockSizeUser>::BlockSize::USIZE;
 /// `pt_count` random plaintexts, asserting that both implementations agree.
 fn compare_vs_c(rng: &mut Lehmer64, key: &[u8], pt_count: usize) {
     let rust_cipher = Cipher::new_from_slice(key).unwrap();
-    let mut ik_enc = frog_ref::setup_ik(key, 0 /* DIR_ENCRYPT */);
-    let mut ik_dec = frog_ref::setup_ik(key, 1 /* DIR_DECRYPT */);
+    let mut ik_enc = frog_ref::setup_ik(key, Direction::Encrypt);
+    let mut ik_dec = frog_ref::setup_ik(key, Direction::Decrypt);
 
     for _ in 0..pt_count {
         let mut pt = [0_u8; BLOCK_SIZE];

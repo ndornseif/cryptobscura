@@ -13,6 +13,7 @@ mod common;
 use common::frog_ref;
 use blobby::encode_blobs;
 use std::{fs, path::Path};
+use cryptobscura::util::Direction;
 
 const BLB_DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data");
 
@@ -33,7 +34,7 @@ fn gen_for_key_size(key_size: usize) -> (String, Vec<u8>) {
         for bit_idx in 0..8u8 {
             let mut key = vec![0u8; key_size];
             key[key_size - byte_idx - 1] = 1 << (7 - bit_idx);
-            let mut ik = frog_ref::setup_ik(&key, 0);
+            let mut ik = frog_ref::setup_ik(&key, Direction::Encrypt);
             push(&mut blobs, &key, &zero_pt, &mut ik);
         }
     }
@@ -41,7 +42,7 @@ fn gen_for_key_size(key_size: usize) -> (String, Vec<u8>) {
     // Variable-text: zero key, one bit set per bit of the plaintext.
     {
         let zero_key = vec![0u8; key_size];
-        let mut ik = frog_ref::setup_ik(&zero_key, 0);
+        let mut ik = frog_ref::setup_ik(&zero_key, Direction::Encrypt);
         for byte_idx in 0..bs {
             for bit_idx in 0..8u8 {
                 let mut pt = [0u8; frog_ref::BLOCK_SIZE];
@@ -55,7 +56,7 @@ fn gen_for_key_size(key_size: usize) -> (String, Vec<u8>) {
     for &(kfill, pfill) in &[(0x00u8, 0x00u8), (0xFF, 0xFF), (0x00, 0xFF), (0xFF, 0x00)] {
         let mut key = vec![kfill; key_size];
         let pt = [pfill; frog_ref::BLOCK_SIZE];
-        let mut ik = frog_ref::setup_ik(&key, 0);
+        let mut ik = frog_ref::setup_ik(&key, Direction::Encrypt);
         push(&mut blobs, &mut key, &pt, &mut ik);
     }
 
@@ -63,19 +64,19 @@ fn gen_for_key_size(key_size: usize) -> (String, Vec<u8>) {
     for byte_idx in 0..key_size {
         let mut key = vec![0u8; key_size];
         key[byte_idx] = 0xFF;
-        let mut ik = frog_ref::setup_ik(&key, 0);
+        let mut ik = frog_ref::setup_ik(&key, Direction::Encrypt);
         push(&mut blobs, &key, &zero_pt, &mut ik);
     }
 
     // Alternating patterns: 0x55 and 0xAA in key and plaintext.
     for &fill in &[0x55u8, 0xAA] {
         let mut key = vec![fill; key_size];
-        let mut ik = frog_ref::setup_ik(&key, 0);
+        let mut ik = frog_ref::setup_ik(&key, Direction::Encrypt);
         push(&mut blobs, &mut key, &zero_pt, &mut ik);
         push(&mut blobs, &mut key, &ones_pt, &mut ik);
 
         let zero_key = vec![0u8; key_size];
-        let mut ik_zero = frog_ref::setup_ik(&zero_key, 0);
+        let mut ik_zero = frog_ref::setup_ik(&zero_key, Direction::Encrypt);
         let pt = [fill; frog_ref::BLOCK_SIZE];
         push(&mut blobs, &zero_key, &pt, &mut ik_zero);
     }

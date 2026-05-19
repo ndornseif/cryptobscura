@@ -11,6 +11,14 @@
 use alloc::string::String;
 use core::fmt::Write as _;
 
+/// Defines cipher working direction.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[allow(missing_docs)]
+pub enum Direction {
+    Encrypt,
+    Decrypt,
+}
+
 /// Encode `bytes` as a lowercase hex string.
 ///
 /// # Usage

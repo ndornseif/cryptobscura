@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 
 use std::ffi::c_int;
+use cryptobscura::util::Direction;
 
 pub const BLOCK_SIZE: usize = 16;
 
@@ -23,15 +24,16 @@ unsafe extern "C" {
 }
 
 /// Expand `key` into a C internal key for the given direction.
-///
-/// `direction`: `0` = encrypt, `1` = decrypt (matches `DIR_ENCRYPT` /
-/// `DIR_DECRYPT` in the C source).
-pub fn setup_ik(key: &[u8], direction: u8) -> [CIterKey; 8] {
+pub fn setup_ik(key: &[u8], direction: Direction) -> [CIterKey; 8] {
+    let dir_byte: u8 = match direction {
+        Direction::Encrypt => 0,
+        Direction::Decrypt => 1,
+    };
     let mut ik: [CIterKey; 8] = unsafe { std::mem::zeroed() };
     unsafe {
         // Cast to *mut u8: hashKey only reads the key, never writes.
         hashKey(key.as_ptr() as *mut u8, key.len() as c_int, &mut ik);
-        makeInternalKey(direction, ik.as_mut_ptr());
+        makeInternalKey(dir_byte, ik.as_mut_ptr());
     }
     ik
 }
