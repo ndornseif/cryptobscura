@@ -14,7 +14,7 @@ It is based on a novel approach of constructing an internal key that is treated 
 as much information about the cipher's internal operation as possible[^1].
 A 1999 analysis by Wagner, et al. showcases attacks on large sets of weak keys (2<sup>-29</sup> of the keyspace for decrypt)[^2].
 This implementation does not make any attempt to prevent the use of these keys. The C reference implementation is obtained from the designers directly as submitted to NIST[^1].
-<!--
+
 ### Hasty Pudding Cipher
 Another AES candidate, this one designed by Richard Schroeppel. It was one of the first tweakable block ciphers and is notable for 
 its relatively complicated key schedule and its use of an additional *spice* parameter as a kind of secondary key[^3].
@@ -22,7 +22,7 @@ The cipher comes in five different versions depending on the required block size
 In its original iteration the cipher suffered from weak keys (around 2<sup>-8</sup> of the keyspace)[^4] these keys drop the Security level to around 2<sup>90</sup>.
 Schroeppel addressed the issue in a modified version in 1999, the full modified specification can be found in [^5].
 This crate implements the newer strengthened specification, that claims to fix the aforementioned attack.
--->
+
 ## Testing
 All ciphers are tested against known ciphertext-plaintext pairs using the blobby format akin to the tests used in the [block-cipher crate](https://github.com/RustCrypto/block-ciphers/tree/master/serpent/tests/data).
 These are generated using the reference C implementations where available.
@@ -44,7 +44,6 @@ This crate may be licensed under the [GNU Lesser General Public License, version
 
 [^1]: [D. Georgoudis, D. Leroux, B. S. Chaves, TecApro International S.A.; "The FROG Encryption Algorithm"; 1998](https://web.archive.org/web/20170708064547/http://www.grupolotusbrasil.com.br/grupoconceptprime.com.br/ftp.suporte/util/LIVROS%20E%20TREINAMENTOS/SEGURANCA/criptografia_diciplina/CIE/cd-rom/softwares/Sources/sources.pascal/frog/frog.htm)
 [^2]: [D. Wagner, N. Ferguson, B. Schneier; "Cryptanalysis of Frog"; Proceedings of the 2nd AES candidate conference; NIST; 1999](https://web.archive.org/web/20251031194144/https://www.schneier.com/wp-content/uploads/2016/02/paper-frog.pdf)
-<!--
 [^3]: [R. Schroeppel, H. Orman; "An Overview of the Hasty Pudding Cipher"; 1998](https://web.archive.org/web/20030621202024/http://www.cs.arizona.edu/~rcs/hpc/hpc-overview)
 
 [^4]: [C. D’Halluin, G. Bijnens, B. Preneel, V. Rijmen; "Equivalent Keys of HPC"; Advances in Cryptology - ASIACRYPT’99; 1999](https://link.springer.com/chapter/10.1007/978-3-540-48000-6_4)
@@ -52,7 +51,7 @@ This crate may be licensed under the [GNU Lesser General Public License, version
 [^5]: [R. Schroeppel; "Hasty Pudding Cipher Specification"; Revised 1999](https://web.archive.org/web/20110717205702/http://richard.schroeppel.name:8015/hpc/hpc-spec)
 
 [^6]: [Puddingmeister R. Schroeppel; "The Hasty Pudding Cipher: One Year Later; 1999"](https://web.archive.org/web/20021203180746/http://www.cs.arizona.edu/~rcs/hpc/hpc-oneyearlater)
--->
+
 <!---
 Left here for future reference
 C. Burwick, D. Coppersmith, E. D’Avignon, R. Gennaro, S. Halevi, C. Jutla, S.M. Matyas, L. O’Connor, M. Peyravian, D. Safford, N. Zunic; "MARS — A Candidate Cipher for AES"; NIST AES Proposal; Revised 1999
