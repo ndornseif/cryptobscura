@@ -6,4 +6,5 @@
 
 pub mod frog;
 pub mod hasty_pudding;
+pub mod tame;
 pub mod util;
