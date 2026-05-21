@@ -45,17 +45,25 @@ def generate_bytes_from_constant(filepath: Path, bytes_req: int) -> list[int]:
 def format_bytes_list(intl: list[int]) -> str:
     formated_list = []
     for si in intl:
-        assert si < 256
-        formated_list.append(f"0x{si:02x}")
-
+        byte_length = max(1, (si.bit_length() + 7) // 8)
+        formated_list.append(f"0x{si:0{2 * byte_length}x}")
     return str(formated_list).replace("'", "")
 
+def glue_bytes(intl: list[str], bytes_per_word: int) -> list[int]:
+    resultlist = []
+    for i in range(0, (len(intl) // bytes_per_word) * bytes_per_word, bytes_per_word):
+        sublist = intl[i : i + bytes_per_word]
+        newint = 0
+        for i, byte in enumerate(sublist):
+            newint += byte << ((bytes_per_word - i - 1) * 8)
+        resultlist.append(newint)
+    return resultlist
 
 def main() -> int:
     this_file = Path(__file__).name
-    helpstr = f"./{this_file} (pi | e | sqrt2) <num_bytes>"
+    helpstr = f"./{this_file} (pi | e | sqrt2) <num_words> <bytes_per_word>"
 
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 2:
         print("Incorrect number of arguments.")
         print(f"Usage: {helpstr}")
         return 1
@@ -67,18 +75,27 @@ def main() -> int:
     file_path = file_ids[sys.argv[1].lower()]
 
     try:
-        num_bytes = int(sys.argv[2])
+        num_words = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+        if num_words < 1:
+            raise ValueError()
+    except ValueError:
+        print("Invalid number of words specified.")
+        print(f"Usage: {helpstr}")
+        return 1
+
+    try:
+        num_bytes = int(sys.argv[3]) if len(sys.argv) > 3 else 1
+        if num_bytes < 1:
+            raise ValueError()
     except ValueError:
         print("Invalid number of bytes specified.")
         print(f"Usage: {helpstr}")
         return 1
 
-    if num_bytes < 1:
-        print("Invalid number of bytes specified.")
-        print(f"Usage: {helpstr}")
-        return 1
 
-    print(format_bytes_list(generate_bytes_from_constant(file_path, num_bytes)))
+    int_list = generate_bytes_from_constant(file_path, num_words * num_bytes)
+    int_list = glue_bytes(int_list, num_bytes)
+    print(format_bytes_list(int_list))
     return 0
 
 
