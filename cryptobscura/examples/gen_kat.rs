@@ -11,7 +11,7 @@ use std::{
 use cipher::{AlgorithmName, Block, BlockCipherEncrypt, BlockSizeUser, KeyInit};
 use cryptobscura::{
     frog::Frog,
-    util::{binary_to_hex_string, AuthorName},
+    util::{AuthorName, binary_to_hex_string},
 };
 
 /// Result output directory
