@@ -8,12 +8,12 @@
 //!
 //! The key schedule pads short keys with the binary expansion of π, encodes the
 //! result as 16 64-bit words, and mixes them through repeated applications of the
-//! `quirl` function, a ChaCha20 derived ARX permutation.
+//! `quirl` function, a ChaCha20-derived ARX permutation.
 //! Twelve preheat passes are applied before extracting round and whitening keys.
 //!
 //! ## Implementation notes
 //!
-//! - **Side-channel attacks.** The round function uses multiple key dependent operations
+//! - **Side-channel attacks.** The round function uses multiple key-dependent operations;
 //!   side-channel attacks are a concern this implementation does not address.
 //! - **Zeroization.** Enable the `zeroize` Cargo feature to clear the key state
 //!   from memory when the [`Tame`] value is dropped.

@@ -2,7 +2,7 @@
 Pure rust implementations of less common cryptographic primitives.
 
 ## Overview
-These are no-std, pure rust implementations without any unsafe code, as a result they should work on any platform the rust compiler supports.
+These are no-std, pure Rust implementations without any unsafe code; as a result they should work on any platform the Rust compiler supports.
 For a specific platform these will of course not be the most efficient possible implementations.
 Ciphers implement the traits specified in the [cipher crate](https://crates.io/crates/cipher).
 
@@ -12,22 +12,25 @@ Ciphers implement the traits specified in the [cipher crate](https://crates.io/c
 Candidate block cipher submitted to the AES competition by `TecApro`.
 It is based on a novel approach of constructing an internal key that is treated as a program operated on the data, trying to deny the attacker
 as much information about the cipher's internal operation as possible[^1].
-A 1999 analysis by Wagner, et al. showcases attacks on large sets of weak keys (2<sup>-29</sup> of the keyspace for decrypt)[^2].
+A 1999 analysis by Wagner, et al. showcases attacks on large sets of weak keys (2<sup>-29</sup> of the keyspace for decryption)[^2].
 This implementation does not make any attempt to prevent the use of these keys. The C reference implementation is obtained from the designers directly as submitted to NIST[^1].
 
 ### Hasty Pudding Cipher
 Another AES candidate, this one designed by Richard Schroeppel. It was one of the first tweakable block ciphers and is notable for 
 its relatively complicated key schedule and its use of an additional *spice* parameter as a kind of secondary key[^3].
-The cipher comes in five different versions depending on the required block size, this implementation includes only HPC-Medium (65-128 bits) and HPC-Long (129-512 bits).
-In its original iteration the cipher suffered from weak keys (around 2<sup>-8</sup> of the keyspace)[^4] these keys drop the Security level to around 2<sup>90</sup>.
-Schroeppel addressed the issue in a modified version in 1999, the full modified specification can be found in [^5].
+The cipher comes in five different versions depending on the required block size, this implementation does not include HPC-Tiny (less than 36 bits).
+In its original iteration the cipher suffered from weak keys (around 2<sup>-8</sup> of the keyspace)[^4]; these keys drop the security level to around 2<sup>90</sup>.
+Schroeppel addressed the issue in a modified version in 1999; the full modified specification can be found in [^5].
 This crate implements the newer strengthened specification, that claims to fix the aforementioned attack.
+
+### TAME
+The transposition and mixing encryptor (TAME) is an original design. Based on the classic Feistel network it supports keys of any length shorter than 64 bytes, including zero-byte keys. The key schedule makes use of a ChaCha20-derived ARX permutation. Both shifts and lookups in the actual encryption are key-dependent; this implementation of the cipher offers no protection from side-channel attacks. TAME is slow compared to other included ciphers.
 
 ## Testing
 All ciphers are tested against known ciphertext-plaintext pairs using the blobby format akin to the tests used in the [block-cipher crate](https://github.com/RustCrypto/block-ciphers/tree/master/serpent/tests/data).
 These are generated using the reference C implementations where available.
 These implementations live in `./references/{CIPHERNAME}`. The test vectors are chosen based on the original NIST specification for the AES competition, found in `./references/nist_kat`.
-The rust implementations are also compared to the reference implementations on large sets of pseudorandom data by linking the C implementation into the rust tests.
+The Rust implementations are also compared to the reference implementations on large sets of pseudorandom data by linking the C implementation into the Rust tests.
 
 ## ⚠️ THE USUAL WARNING
 This project has not been independently audited.
