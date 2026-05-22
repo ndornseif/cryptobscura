@@ -1,7 +1,7 @@
 //! KAT file generator — run by setting `REGEN_KATS=1`:
 //!
 //! ```text
-//! REGEN_KATS=1 cargo test regen_frog_kats -- --nocapture
+//! REGEN_KATS=1 cargo test regen_{ciphername}_kats -- --nocapture
 //! ```
 //!
 //! The generated `.blb` files are committed to the repository.

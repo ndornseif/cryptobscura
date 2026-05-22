@@ -1,34 +1,27 @@
 //! TAME block cipher
 //!
-//! TAME is an original 128-bit block cipher with a variable-length key of 0–64 bytes.
-//! It uses a 32-round unbalanced Feistel network with key-dependent rotation and
-//! S-box substitution in the round function.
+//! TAME (Transposition And Mixing Encryptor) is an original 128-bit block cipher with a variable key length of 0–64 bytes.
+//! It uses a 32-round Feistel network with key-dependent rotation and
+//! S-box selection in the round function.
 //!
 //! ## Design
 //!
-//! The round function applies a data-dependent left-rotation (amount taken from the
-//! low 6 bits of the round key), passes the result through one of four fixed 256-byte
-//! S-boxes (selected by byte position), then XORs the round key.
-//! Input and output whitening are applied with four additional 64-bit keys.
-//!
 //! The key schedule pads short keys with the binary expansion of π, encodes the
 //! result as 16 64-bit words, and mixes them through repeated applications of the
-//! `quirl` function — a ChaCha20-inspired ARX permutation operating on a 4×4 word
-//! matrix. Twelve preheat passes are applied before extracting round and whitening
-//! keys.
+//! `quirl` function, a ChaCha20 derived ARX permutation.
+//! Twelve preheat passes are applied before extracting round and whitening keys.
 //!
 //! ## Implementation notes
 //!
-//! - **Side-channel attacks.** The S-box lookup index is data-dependent and may leak
-//!   information through cache-timing attacks on platforms without constant-time
-//!   memory access.
-//! - **Zeroization.** Enable the `zeroize` Cargo feature to clear key material from
-//!   memory when the [`Tame`] value is dropped.
+//! - **Side-channel attacks.** The round function uses multiple key dependent operations
+//!   side-channel attacks are a concern this implementation does not address.
+//! - **Zeroization.** Enable the `zeroize` Cargo feature to clear the key state
+//!   from memory when the [`Tame`] value is dropped.
 //! - **Zero-length keys.** The cipher accepts a 0-byte key, the security applications
 //!   of this should be clear.
 //!
 //! [`KeySizeUser::KeySize`] is set to 16 bytes as a canonical value for `RustCrypto`
-//! compatibility; use [`KeyInit::new_from_slice`] to supply keys of other lengths.
+//! compatibility, use [`KeyInit::new_from_slice`] to supply keys of other lengths.
 //!
 //! ## Security
 //!
@@ -52,12 +45,11 @@
 //!
 //! cipher.encrypt_block(&mut block);
 //! assert_ne!(block.as_slice(), plaintext);
-//! assert_eq!(block.as_slice(), [201_u8, 25, 144, 112, 86, 23, 100, 187, 230, 123, 114, 241, 233, 30, 91, 217]);
+//! assert_eq!(block.as_slice(), [189, 59, 18, 130, 109, 103, 60, 37, 148, 31, 77, 124, 201, 12, 38, 95]);
 //!
 //! cipher.decrypt_block(&mut block);
 //! assert_eq!(block.as_slice(), plaintext);
 //! ```
-
 
 pub use cipher;
 
@@ -76,7 +68,6 @@ use zeroize::Zeroize;
 const U64_BYTES: usize = (u64::BITS / u8::BITS) as usize;
 
 const ROUNDS: usize = 32;
-const MIN_KEY_SIZE: usize = 0;
 const MAX_KEY_SIZE: usize = 64;
 const BLOCK_SIZE: usize = <Tame as BlockSizeUser>::BlockSize::USIZE;
 const QUIRL_SIZE: usize = MAX_KEY_SIZE * 2;
@@ -214,13 +205,15 @@ fn quirl(block: &mut [u64; QUIRL_ELEMENTS]) {
     q_f!(block[3], block[6], block[9], block[12]);
 }
 
+/// Generate internal keys from a main key that can be
+/// any length in the range `0..=MAX_KEY_SIZE`.
+/// If the key is longer the excess bytes remain unused.
 fn key_schedule(key: &[u8]) -> InternalKeys {
     const PREHEAT_ROUNDS: usize = 12;
     const LAST_Q: usize = QUIRL_ELEMENTS - 1;
-    debug_assert!(key.len() <= MAX_KEY_SIZE);
-    debug_assert!(key.len() >= MIN_KEY_SIZE);
+    let effective_key_len = key.len().min(MAX_KEY_SIZE);
     let mut q_material = KEY_PAD;
-    q_material[..key.len()].copy_from_slice(key);
+    q_material[..effective_key_len].copy_from_slice(&key[..effective_key_len]);
 
     // Combine key material into u64 values.
     let mut q_matrix = [0_u64; QUIRL_ELEMENTS];
@@ -228,7 +221,7 @@ fn key_schedule(key: &[u8]) -> InternalKeys {
         *out = u64::from_le_bytes(chunk.try_into().unwrap());
     }
 
-    q_matrix[LAST_Q] = q_matrix[LAST_Q].wrapping_add(key.len() as u64);
+    q_matrix[LAST_Q] = q_matrix[LAST_Q].wrapping_add(effective_key_len as u64);
 
     for _ in 0..PREHEAT_ROUNDS {
         quirl(&mut q_matrix);
@@ -248,11 +241,14 @@ fn key_schedule(key: &[u8]) -> InternalKeys {
     new_ik
 }
 
-fn substitute_bytes(input: u64) -> u64 {
+/// Apply the S-Boxes to the provided value
+/// `offset` shifts what sbox is used for what key.
+#[allow(clippy::cast_possible_truncation)]
+fn substitute_bytes(input: u64, offset: usize) -> u64 {
     let mut out: u64 = 0;
     for i in 0..U64_BYTES {
         let byte = (input >> (i * u8::BITS as usize)) as u8;
-        out |= (SBOX[i & 0b11][byte as usize] as u64) << (i * u8::BITS as usize);
+        out |= u64::from(SBOX[i.wrapping_add(offset) & 0b11][byte as usize]) << (i * u8::BITS as usize);
     }
     out
 }
@@ -260,7 +256,7 @@ fn substitute_bytes(input: u64) -> u64 {
 fn f_function(subkey: u64, input: u64) -> u64 {
     let mut out: u64 = input;
     out = out.rotate_left((subkey & 63) as u32);
-    out = substitute_bytes(out);
+    out = substitute_bytes(out, subkey as usize);
     out ^= subkey;
     out
 }
@@ -271,7 +267,7 @@ fn feistel_round(left: &mut u64, right: &mut u64, subkey: u64) {
     *left = old_right;
 }
 
-fn encrypt_tame(block: &mut [u8; BLOCK_SIZE], internal_keys: InternalKeys) {
+fn encrypt_tame(block: &mut [u8; BLOCK_SIZE], internal_keys: &InternalKeys) {
     let mut left = u64::from_le_bytes(block[..U64_BYTES].try_into().unwrap());
     let mut right = u64::from_le_bytes(block[U64_BYTES..].try_into().unwrap());
     // Input Whitening
@@ -288,7 +284,7 @@ fn encrypt_tame(block: &mut [u8; BLOCK_SIZE], internal_keys: InternalKeys) {
     block[U64_BYTES..].copy_from_slice(&right.to_le_bytes());
 }
 
-fn decrypt_tame(block: &mut [u8; BLOCK_SIZE], internal_keys: InternalKeys) {
+fn decrypt_tame(block: &mut [u8; BLOCK_SIZE], internal_keys: &InternalKeys) {
     let mut left = u64::from_le_bytes(block[..U64_BYTES].try_into().unwrap());
     let mut right = u64::from_le_bytes(block[U64_BYTES..].try_into().unwrap());
     // Undo output Whitening
@@ -321,6 +317,14 @@ impl Default for InternalKeys {
     }
 }
 
+#[cfg(feature = "zeroize")]
+impl Zeroize for InternalKeys {
+    fn zeroize(&mut self) {
+        self.round_keys.zeroize();
+        self.whitening_keys.zeroize();
+    }
+}
+
 /// The TAME block cipher.
 #[derive(Clone, Default)]
 pub struct Tame {
@@ -337,10 +341,12 @@ impl KeyInit for Tame {
     }
 
     fn new_from_slice(key: &[u8]) -> Result<Self, InvalidLength> {
-        if key.len() < MIN_KEY_SIZE || key.len() > MAX_KEY_SIZE {
+        if key.len() > MAX_KEY_SIZE {
             return Err(InvalidLength);
         }
-        Ok(Self { internal_keys: key_schedule(key) })
+        Ok(Self {
+            internal_keys: key_schedule(key),
+        })
     }
 }
 
@@ -363,7 +369,10 @@ impl BlockCipherEncBackend for Tame {
     #[inline]
     fn encrypt_block(&self, mut block: InOut<'_, '_, Block<Self>>) {
         let mut buf = *block.get_in();
-        encrypt_tame(AsMut::<[u8; BLOCK_SIZE]>::as_mut(&mut buf), self.internal_keys);
+        encrypt_tame(
+            AsMut::<[u8; BLOCK_SIZE]>::as_mut(&mut buf),
+            &self.internal_keys,
+        );
         *block.get_out() = buf;
     }
 }
@@ -379,7 +388,10 @@ impl BlockCipherDecBackend for Tame {
     #[inline]
     fn decrypt_block(&self, mut block: InOut<'_, '_, Block<Self>>) {
         let mut buf = *block.get_in();
-        decrypt_tame(AsMut::<[u8; BLOCK_SIZE]>::as_mut(&mut buf), self.internal_keys);
+        decrypt_tame(
+            AsMut::<[u8; BLOCK_SIZE]>::as_mut(&mut buf),
+            &self.internal_keys,
+        );
         *block.get_out() = buf;
     }
 }
@@ -387,6 +399,13 @@ impl BlockCipherDecBackend for Tame {
 impl fmt::Debug for Tame {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("TAME { ... }")
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl Drop for Tame {
+    fn drop(&mut self) {
+        self.internal_keys.zeroize();
     }
 }
 
@@ -410,22 +429,25 @@ mod test {
     #[test]
     fn cipher_round_trip() {
         let key = [0_u8; MAX_KEY_SIZE];
-        let ikx = key_schedule(&key);
+        let ik = key_schedule(&key);
         let block = [0_u8; BLOCK_SIZE];
         let mut blk = block;
-        encrypt_tame(&mut blk, ikx);
-        decrypt_tame(&mut blk, ikx);
+        encrypt_tame(&mut blk, &ik);
+        decrypt_tame(&mut blk, &ik);
         assert_eq!(block, blk);
     }
 
     #[test]
     fn wrong_key_fails_decryption() {
         let key = [0x42_u8; MAX_KEY_SIZE];
-        let wrong_key = [0x99_u8; MAX_KEY_SIZE];
+        let mut wrong_key = key;
+        wrong_key[0] ^= 1;
         let block = [0xAB_u8; BLOCK_SIZE];
         let mut blk = block;
-        encrypt_tame(&mut blk, key_schedule(&key));
-        decrypt_tame(&mut blk, key_schedule(&wrong_key));
+        let ik_correct = key_schedule(&key);
+        let ik_wrong = key_schedule(&wrong_key);
+        encrypt_tame(&mut blk, &ik_correct);
+        decrypt_tame(&mut blk, &ik_wrong);
         assert_ne!(block, blk);
     }
 
@@ -435,21 +457,21 @@ mod test {
         let block = [0xCC_u8; BLOCK_SIZE];
         let mut blk = block;
         let ik = key_schedule(&key);
-        encrypt_tame(&mut blk, ik);
+        encrypt_tame(&mut blk, &ik);
         blk[0] ^= 1;
-        decrypt_tame(&mut blk, ik);
+        decrypt_tame(&mut blk, &ik);
         assert_ne!(block, blk);
     }
 
     #[test]
     fn roundtrip_various_key_lengths() {
         let key_buf = [0x55_u8; MAX_KEY_SIZE];
-        for len in [0, 1, 8, 16, 32, MAX_KEY_SIZE] {
+        for len in [0, 1, 8, 16, 32, 40, 48, 56, MAX_KEY_SIZE] {
             let block = [0xAA_u8; BLOCK_SIZE];
             let mut blk = block;
             let ik = key_schedule(&key_buf[..len]);
-            encrypt_tame(&mut blk, ik);
-            decrypt_tame(&mut blk, ik);
+            encrypt_tame(&mut blk, &ik);
+            decrypt_tame(&mut blk, &ik);
             assert_eq!(block, blk, "roundtrip failed for key_len={len}");
         }
     }
@@ -459,7 +481,22 @@ mod test {
         let key = [0_u8; MAX_KEY_SIZE];
         let block = [0_u8; BLOCK_SIZE];
         let mut blk = block;
-        encrypt_tame(&mut blk, key_schedule(&key));
+        let ik = key_schedule(&key);
+        encrypt_tame(&mut blk, &ik);
         assert_ne!(block, blk);
+    }
+
+    #[test]
+    fn overlength_key_gets_truncated() {
+        let key = [0x55; MAX_KEY_SIZE];
+        let long_key = [0x55; MAX_KEY_SIZE + 1];
+        let block = [0xAA_u8; BLOCK_SIZE];
+        let ik = key_schedule(&key);
+        let long_ik = key_schedule(&long_key);
+        let mut blk = block;
+        let mut long_blk = block;
+        encrypt_tame(&mut blk, &ik);
+        encrypt_tame(&mut long_blk, &long_ik);
+        assert_eq!(blk, long_blk, "overlength key was not truncated");
     }
 }
