@@ -408,7 +408,7 @@ mod test {
     extern crate std;
 
     #[test]
-    fn ext() {
+    fn cipher_round_trip() {
         let key = [0_u8; MAX_KEY_SIZE];
         let ikx = key_schedule(&key);
         let block = [0_u8; BLOCK_SIZE];

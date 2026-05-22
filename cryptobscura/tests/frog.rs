@@ -90,7 +90,7 @@ fn test_frog_vs_c_aes_key_sizes() {
     const KEY_SIZES: &[usize] = &[16, 24, 32];
     const KEY_COUNT: usize = 64;
     const PLAINTEXT_COUNT: usize = 64;
-    const SEED: u128 = 0x95dd_4194_6904_2c94_94ab_132a012c_d540;
+    const SEED: u128 = 0x95dd_4194_6904_2c94_94ab_132a_012c_d540;
 
     let mut rng = Lehmer64::new(SEED);
     for &key_len in KEY_SIZES {

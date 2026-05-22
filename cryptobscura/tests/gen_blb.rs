@@ -12,8 +12,16 @@ mod common;
 
 use blobby::encode_blobs;
 use common::frog_ref;
-use cryptobscura::util::Direction;
+use cryptobscura::{
+    tame::{
+        Tame,
+        cipher::{Block, BlockCipherEncrypt, BlockSizeUser, KeyInit, typenum::Unsigned as _},
+    },
+    util::Direction,
+};
 use std::{fs, path::Path};
+
+const TAME_BLOCK_SIZE: usize = <Tame as BlockSizeUser>::BlockSize::USIZE;
 
 const BLB_DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data");
 
@@ -28,7 +36,7 @@ fn push(
     blobs.push(frog_ref::encrypt(ik, pt).to_vec());
 }
 
-fn gen_for_key_size(key_size: usize) -> (String, Vec<u8>) {
+fn gen_frog_for_key_size(key_size: usize) -> (String, Vec<u8>) {
     let mut blobs: Vec<Vec<u8>> = Vec::new();
     let bs = frog_ref::BLOCK_SIZE;
     let zero_pt = [0u8; frog_ref::BLOCK_SIZE];
@@ -93,6 +101,74 @@ fn gen_for_key_size(key_size: usize) -> (String, Vec<u8>) {
     (fname, encoded)
 }
 
+fn tame_push(blobs: &mut Vec<Vec<u8>>, key: &[u8], pt: &[u8; TAME_BLOCK_SIZE]) {
+    let cipher = Tame::new_from_slice(key).unwrap();
+    let mut block = Block::<Tame>::default();
+    block.copy_from_slice(pt);
+    cipher.encrypt_block(&mut block);
+    blobs.push(key.to_vec());
+    blobs.push(pt.to_vec());
+    blobs.push(block.to_vec());
+}
+
+fn gen_tame_for_key_size(key_size: usize) -> (String, Vec<u8>) {
+    let mut blobs: Vec<Vec<u8>> = Vec::new();
+    let zero_pt = [0u8; TAME_BLOCK_SIZE];
+    let ones_pt = [0xFFu8; TAME_BLOCK_SIZE];
+
+    // Variable-key: one bit set per bit of the key, zero plaintext.
+    for byte_idx in 0..key_size {
+        for bit_idx in 0..8u8 {
+            let mut key = vec![0u8; key_size];
+            key[key_size - byte_idx - 1] = 1 << (7 - bit_idx);
+            tame_push(&mut blobs, &key, &zero_pt);
+        }
+    }
+
+    // Variable-text: zero key, one bit set per bit of the plaintext.
+    {
+        let zero_key = vec![0u8; key_size];
+        for byte_idx in 0..TAME_BLOCK_SIZE {
+            for bit_idx in 0..8u8 {
+                let mut pt = [0u8; TAME_BLOCK_SIZE];
+                pt[TAME_BLOCK_SIZE - byte_idx - 1] = 1 << (7 - bit_idx);
+                tame_push(&mut blobs, &zero_key, &pt);
+            }
+        }
+    }
+
+    // Corner cases: all-zeros, all-ones, cross combinations.
+    for &(kfill, pfill) in &[(0x00u8, 0x00u8), (0xFF, 0xFF), (0x00, 0xFF), (0xFF, 0x00)] {
+        let key = vec![kfill; key_size];
+        let pt = [pfill; TAME_BLOCK_SIZE];
+        tame_push(&mut blobs, &key, &pt);
+    }
+
+    // Walking byte in key: one byte = 0xFF, rest 0x00; zero plaintext.
+    for byte_idx in 0..key_size {
+        let mut key = vec![0u8; key_size];
+        key[byte_idx] = 0xFF;
+        tame_push(&mut blobs, &key, &zero_pt);
+    }
+
+    // Alternating patterns: 0x55 and 0xAA in key and plaintext.
+    for &fill in &[0x55u8, 0xAA] {
+        let key = vec![fill; key_size];
+        tame_push(&mut blobs, &key, &zero_pt);
+        tame_push(&mut blobs, &key, &ones_pt);
+
+        let zero_key = vec![0u8; key_size];
+        let pt = [fill; TAME_BLOCK_SIZE];
+        tame_push(&mut blobs, &zero_key, &pt);
+    }
+
+    let count = blobs.len() / 3;
+    let (encoded, _) = encode_blobs(&blobs);
+    let fname = format!("tame_{}.blb", key_size * 8);
+    println!("  {fname}: {count} vectors");
+    (fname, encoded)
+}
+
 /// Regenerate `tests/data/frog_*.blb` from the C reference implementation.
 ///
 /// Skipped unless `REGEN_KATS=1` is set.
@@ -104,7 +180,25 @@ fn regen_frog_kats() {
     fs::create_dir_all(BLB_DATA_DIR).expect("create tests/data");
     println!("Generating FROG KAT files:");
     for key_size in [16usize, 24, 32] {
-        let (fname, data) = gen_for_key_size(key_size);
+        let (fname, data) = gen_frog_for_key_size(key_size);
+        let path = Path::new(BLB_DATA_DIR).join(&fname);
+        fs::write(&path, &data).unwrap_or_else(|e| panic!("write {fname}: {e}"));
+    }
+}
+
+/// Regenerate `tests/data/tame_*.blb`.
+/// Since there is no C reference implementation available these are
+/// generated using the rust version.
+/// The KATs can therefore only detect regression.
+#[test]
+fn regen_tame_kats() {
+    if std::env::var_os("REGEN_KATS").is_none() {
+        return;
+    }
+    fs::create_dir_all(BLB_DATA_DIR).expect("create tests/data");
+    println!("Generating TAME KAT files:");
+    for key_size in [16usize, 24, 32, 40, 48, 56, 64] {
+        let (fname, data) = gen_tame_for_key_size(key_size);
         let path = Path::new(BLB_DATA_DIR).join(&fname);
         fs::write(&path, &data).unwrap_or_else(|e| panic!("write {fname}: {e}"));
     }
