@@ -18,7 +18,7 @@ This implementation does not make any attempt to prevent the use of these keys. 
 ### Hasty Pudding Cipher
 Another AES candidate, this one designed by Richard Schroeppel. It was one of the first tweakable block ciphers and is notable for 
 its relatively complicated key schedule and its use of an additional *spice* parameter as a kind of secondary key[^3].
-The cipher comes in five different versions depending on the required block size, this implementation does not include HPC-Tiny (less than 36 bits).
+The cipher comes in five different versions depending on the required block size, this implementation currently only includes HPC-Medium.
 In its original iteration the cipher suffered from weak keys (around 2<sup>-8</sup> of the keyspace)[^4]; these keys drop the security level to around 2<sup>90</sup>.
 Schroeppel addressed the issue in a modified version in 1999; the full modified specification can be found in [^5].
 This crate implements the newer strengthened specification, that claims to fix the aforementioned attack.
@@ -35,7 +35,7 @@ The Rust implementations are also compared to the reference implementations on l
 ## ⚠️ THE USUAL WARNING
 This project has not been independently audited.
 Some of these primitives could or do suffer from cryptographic weaknesses known and unknown.
-Side channel attacks might be feasible, constant-time operation is not guaranteed for all implementations and targets.
+Side channel attacks might be feasible on some or all of the ciphers.
 Use at your own risk and be aware that there are lots of potential pitfalls when working with primitives directly.
 <!--
 ## Command line tool

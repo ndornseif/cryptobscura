@@ -1,6 +1,7 @@
 //! Code common to the testing system.
 #![allow(dead_code)]
 pub mod frog_ref;
+pub mod hpc_ref;
 
 /// Encode `bytes` as a lowercase hex string.
 pub fn hex(bytes: &[u8]) -> String {

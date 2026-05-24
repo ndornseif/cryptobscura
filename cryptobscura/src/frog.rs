@@ -19,7 +19,7 @@
 //!
 //! - **Side Channel attacks.** The round S-Box lookup is both key-dependent and data-dependent,
 //!   making this implementation of FROG susceptible to side-channel attacks.
-//! - **Zeroization.** Enable the `zeroize` Cargo feature to clear the 4 608-byte key state
+//! - **Zeroization.** Enable the `zeroize` Cargo feature to clear the key state
 //!   from memory when the [`Frog`] value is dropped.
 //!
 //! The key schedule is computationally expensive relative to the block operation.
@@ -39,7 +39,7 @@
 //! Wagner, Ferguson, and Schneier (1999)[^2] found that FROG's diffusion layer
 //! provides slow avalance for certain sets of weak keys.  
 //! A differential attack on the decryption mode causes 2<sup>−29</sup> of keys
-//! to be weak.  
+//! to be weak.
 //! This implementation does **not** detect or reject weak keys.
 //!
 //!
